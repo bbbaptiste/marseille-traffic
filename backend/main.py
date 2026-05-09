@@ -109,3 +109,28 @@ def get_traffic(hour: int, day_type: str):
     ]
 
     return {"type": "FeatureCollection", "features": features}
+
+
+@app.get("/api/traffic/daily")
+def get_traffic_daily(road_id: int, day_type: str):
+    if day_type not in ("semaine", "weekend"):
+        raise HTTPException(status_code=400, detail="day_type must be semaine or weekend")
+
+    try:
+        with engine.connect() as conn:
+            rows = conn.execute(
+                text("""
+                    SELECT hour, traffic_level
+                    FROM traffic_levels
+                    WHERE road_id = :road_id AND day_type = :day_type
+                    ORDER BY hour
+                """),
+                {"road_id": road_id, "day_type": day_type},
+            ).fetchall()
+    except (ProgrammingError, OperationalError):
+        raise HTTPException(status_code=503, detail="Database unavailable")
+
+    if not rows:
+        raise HTTPException(status_code=404, detail=f"No traffic data for road_id={road_id}")
+
+    return [{"hour": r.hour, "traffic_level": round(r.traffic_level, 4)} for r in rows]
