@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# Docker volumes & local env
+.env
+*.env
+
+# macOS
+.DS_Store
+
+# PostgreSQL data
+postgres_data/
