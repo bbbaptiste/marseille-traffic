@@ -1,0 +1,74 @@
+/* =============================================================
+   VOIES — Animations
+   Keyframes partagées importées par voies-design-system.css.
+   Utiliser via animation: <name> <duration> <easing> <fill-mode>
+   ============================================================= */
+
+/* -----------------------------------------------------------
+   slide-up
+   Entrée depuis le bas avec fondu. Usage : popups, toasts,
+   panneaux qui apparaissent au-dessus de la carte.
+   Exemple : animation: slide-up 0.2s ease forwards;
+----------------------------------------------------------- */
+@keyframes slide-up {
+  from {
+    opacity:   0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity:   1;
+    transform: translateY(0);
+  }
+}
+
+/* -----------------------------------------------------------
+   fade-in
+   Fondu simple sans déplacement. Usage : StatsBar, Legend,
+   tout élément qui apparaît sans direction de provenance.
+   Exemple : animation: fade-in 0.3s ease forwards;
+----------------------------------------------------------- */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* -----------------------------------------------------------
+   pulse-dot
+   Pulsation douce pour les indicateurs de statut en temps réel.
+   Usage : point coloré dans .voies-traffic-badge.
+   Exemple : animation: pulse-dot 2s ease-in-out infinite;
+----------------------------------------------------------- */
+@keyframes pulse-dot {
+  0%, 100% {
+    opacity:   1;
+    transform: scale(1);
+  }
+  50% {
+    opacity:   0.55;
+    transform: scale(0.75);
+  }
+}
+
+/* -----------------------------------------------------------
+   bounce-in
+   Entrée avec rebond élastique. Usage : icônes d'alerte,
+   notifications, éléments qui doivent attirer l'attention.
+   Exemple : animation: bounce-in 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards;
+----------------------------------------------------------- */
+@keyframes bounce-in {
+  0% {
+    opacity:   0;
+    transform: scale(0.6);
+  }
+  60% {
+    opacity:   1;
+    transform: scale(1.08);
+  }
+  80% {
+    transform: scale(0.96);
+  }
+  100% {
+    opacity:   1;
+    transform: scale(1);
+  }
+}

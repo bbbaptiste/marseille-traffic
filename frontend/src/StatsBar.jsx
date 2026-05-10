@@ -13,7 +13,7 @@ export default function StatsBar({ features, hour, dayType }) {
         {String(hour).padStart(2, '0')}:00 · {label}
       </span>
       <span className="w-px h-4 bg-gray-700" />
-      <span className={saturated > 0 ? 'text-red-400 font-semibold' : 'text-gray-400'}>
+      <span className={saturated > 0 ? 'text-[var(--traffic-critical)] font-semibold' : 'text-gray-400'}>
         🔴 <span className="font-bold text-gray-100">{saturated}</span> saturée{saturated > 1 ? 's' : ''}
       </span>
       <span className="w-px h-4 bg-gray-700" />

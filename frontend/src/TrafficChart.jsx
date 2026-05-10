@@ -3,6 +3,7 @@ import {
   LineChart, Line, XAxis, YAxis, Tooltip,
   ReferenceLine, Legend, ResponsiveContainer, CartesianGrid,
 } from 'recharts'
+import { CHART_COLORS, CHART_STYLE } from './config/mapConfig.js'
 
 const API_BASE = 'http://localhost:8000'
 
@@ -44,41 +45,41 @@ export default function TrafficChart({ roadId, hour, onPeak }) {
   return (
     <ResponsiveContainer width="100%" height={200}>
       <LineChart data={data} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+        <CartesianGrid strokeDasharray="3 3" stroke={CHART_STYLE.grid} />
         <XAxis
           dataKey="hour"
           tickFormatter={fmtHour}
-          tick={{ fontSize: 10, fill: '#9ca3af' }}
+          tick={{ fontSize: 10, fill: CHART_STYLE.tick }}
           interval={3}
-          axisLine={{ stroke: '#374151' }}
+          axisLine={{ stroke: CHART_STYLE.grid }}
           tickLine={false}
         />
         <YAxis
           domain={[0, 100]}
           tickFormatter={v => `${v}%`}
-          tick={{ fontSize: 10, fill: '#9ca3af' }}
+          tick={{ fontSize: 10, fill: CHART_STYLE.tick }}
           width={36}
           axisLine={false}
           tickLine={false}
         />
         <Tooltip
-          contentStyle={{ background: '#111827', border: '1px solid #374151', borderRadius: 8, fontSize: 12 }}
-          labelStyle={{ color: '#e5e7eb' }}
-          itemStyle={{ color: '#d1d5db' }}
+          contentStyle={{ background: CHART_STYLE.tooltip.bg, border: `1px solid ${CHART_STYLE.tooltip.border}`, borderRadius: 8, fontSize: 12 }}
+          labelStyle={{ color: CHART_STYLE.tooltip.text }}
+          itemStyle={{ color: CHART_STYLE.tooltip.item }}
           formatter={(v, name) => [`${v}%`, name === 'semaine' ? 'Semaine' : 'Week-end']}
           labelFormatter={fmtHour}
         />
         <Legend
           formatter={name => (
-            <span style={{ color: '#d1d5db', fontSize: 11 }}>
+            <span style={{ color: CHART_STYLE.tooltip.item, fontSize: 11 }}>
               {name === 'semaine' ? 'Semaine' : 'Week-end'}
             </span>
           )}
           iconType="line"
         />
-        <ReferenceLine x={hour} stroke="#6b7280" strokeDasharray="4 2" strokeWidth={1.5} />
-        <Line type="monotone" dataKey="semaine" stroke="#E74C3C" dot={false} strokeWidth={2} />
-        <Line type="monotone" dataKey="weekend" stroke="#3498DB" dot={false} strokeWidth={2} />
+        <ReferenceLine x={hour} stroke={CHART_STYLE.reference} strokeDasharray="4 2" strokeWidth={1.5} />
+        <Line type="monotone" dataKey="semaine" stroke={CHART_COLORS.semaine} dot={false} strokeWidth={2} />
+        <Line type="monotone" dataKey="weekend" stroke={CHART_COLORS.weekend} dot={false} strokeWidth={2} />
       </LineChart>
     </ResponsiveContainer>
   )

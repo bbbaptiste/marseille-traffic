@@ -1,11 +1,14 @@
 const LEVELS = [
-  { color: '#2ECC71', label: 'Fluide', range: '< 30 %' },
-  { color: '#F39C12', label: 'Modéré', range: '30–60 %' },
-  { color: '#E74C3C', label: 'Dense', range: '60–80 %' },
-  { color: '#900C3F', label: 'Saturé', range: '> 80 %' },
+  { color: 'var(--traffic-low)',      label: 'Fluide',     range: '< 30 %'  },
+  { color: 'var(--traffic-mid)',      label: 'Modéré',     range: '30–60 %' },
+  { color: 'var(--traffic-high)',     label: 'Dense',      range: '60–80 %' },
+  { color: 'var(--traffic-critical)', label: 'Saturé',     range: '> 80 %'  },
 ]
 
-export default function Legend({ hour }) {
+const SIMULATION_LEVEL = { color: 'var(--road-removed)', label: 'Supprimée', range: '—' }
+
+export default function Legend({ hour, simulationMode }) {
+  const levels = simulationMode ? [...LEVELS, SIMULATION_LEVEL] : LEVELS
   const formatted = `${String(hour).padStart(2, '0')}:00`
 
   return (
@@ -14,7 +17,7 @@ export default function Legend({ hour }) {
         Niveau de trafic
       </p>
       <ul className="space-y-1.5">
-        {LEVELS.map(({ color, label, range }) => (
+        {levels.map(({ color, label, range }) => (
           <li key={label} className="flex items-center gap-2">
             <span
               className="inline-block w-3 h-3 rounded-sm flex-shrink-0"

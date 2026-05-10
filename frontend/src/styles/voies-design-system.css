@@ -1,0 +1,301 @@
+/* =============================================================
+   VOIES — Design System
+   Source unique de vérité pour tous les tokens visuels.
+   Aucune couleur en dur dans les composants React.
+   ============================================================= */
+
+@import "./voies-animations.css";
+
+/* -------------------------------------------------------------
+   Police système — stack sans-serif natif
+   ------------------------------------------------------------- */
+:root {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* =============================================================
+   TOKENS : MODE CLAIR (défaut)
+   ============================================================= */
+:root {
+  /* -----------------------------------------------------------
+     Couleurs primaires
+     #00BFA5 — teal vif, identité Voies (boutons, accents actifs)
+     #00897B — variante sombre pour hover / états pressés
+     #1A1A2E — fond global nuit (texte sur fond clair ou bg dark)
+     #F5F5F0 — surface neutre chaude (fond des cartes en mode clair)
+     #16213E — surface foncée (cartes, panneaux en mode sombre)
+  ----------------------------------------------------------- */
+  --voies-primary:       #00BFA5; /* Couleur d'accent principale */
+  --voies-primary-dark:  #00897B; /* Hover / état actif du primaire */
+  --voies-dark:          #1A1A2E; /* Fond global / texte foncé */
+  --voies-surface:       #F5F5F0; /* Fond de carte en mode clair */
+  --voies-surface-dark:  #16213E; /* Fond de carte en mode sombre */
+
+  /* -----------------------------------------------------------
+     Trafic — sémantique colorimétrique
+     Correspondance directe avec les niveaux de traffic_level [0-1]
+     low      : 0.0–0.3  fluide
+     mid      : 0.3–0.6  modéré
+     high     : 0.6–0.8  dense
+     critical : 0.8–1.0  saturé
+     removed  : route supprimée (simulation d'incident)
+     impacted : route impactée en amont / aval
+  ----------------------------------------------------------- */
+  --traffic-low:      #4CAF50; /* Trafic fluide */
+  --traffic-mid:      #FF9800; /* Trafic modéré */
+  --traffic-high:     #F44336; /* Trafic dense */
+  --traffic-critical: #B71C1C; /* Saturation critique */
+  --road-removed:     #9C27B0; /* Route retirée du réseau (incident) */
+  --road-impacted:    #FFB300; /* Route impactée par un incident proche */
+
+  /* -----------------------------------------------------------
+     Typographie — shorthand font pour cohérence d'échelle
+     Nomenclature : weight size/line-height stack
+  ----------------------------------------------------------- */
+  --voies-heading:  500 24px/1.2 var(--font-sans); /* Titres de panneaux */
+  --voies-subhead:  500 16px/1.4 var(--font-sans); /* Sous-titres, labels de section */
+  --voies-body:     400 13px/1.6 var(--font-sans); /* Corps de texte standard */
+  --voies-caption:  400 11px/1.4 var(--font-sans); /* Légendes, labels secondaires */
+
+  /* -----------------------------------------------------------
+     Espacements — échelle à facteur ~2
+  ----------------------------------------------------------- */
+  --space-xs:  4px;  /* Écart entre icône et label */
+  --space-sm:  8px;  /* Padding interne compact (badges, chips) */
+  --space-md: 16px;  /* Padding standard des cartes */
+  --space-lg: 24px;  /* Séparation entre sections */
+  --space-xl: 40px;  /* Marges de mise en page */
+
+  /* -----------------------------------------------------------
+     Rayons de bordure — exprime la hiérarchie des éléments
+  ----------------------------------------------------------- */
+  --radius-pill: 999px; /* Boutons pill, badges */
+  --radius-card:  16px; /* Cartes, panneaux, popups */
+  --radius-icon:  12px; /* Conteneurs d'icône */
+  --radius-chip:  20px; /* Chips interactifs */
+
+  /* -----------------------------------------------------------
+     Ombres — surfaces en mode clair
+  ----------------------------------------------------------- */
+  --shadow-card:   0 2px 12px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-popup:  0 8px 32px rgba(0, 0, 0, 0.14), 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-float:  0 4px 24px rgba(0, 0, 0, 0.12);
+
+  /* -----------------------------------------------------------
+     Couleurs sémantiques de surface (mode clair)
+  ----------------------------------------------------------- */
+  --color-bg:         #F5F5F0;       /* Fond de page */
+  --color-surface:    #FFFFFF;       /* Cartes, panneaux */
+  --color-border:     rgba(0,0,0,0.08);
+  --color-text:       #1A1A2E;       /* Texte principal */
+  --color-text-muted: rgba(26,26,46,0.55); /* Texte secondaire */
+  --color-overlay:    rgba(255,255,255,0.95); /* Panneaux flottants */
+}
+
+/* =============================================================
+   TOKENS : MODE SOMBRE
+   ============================================================= */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Surfaces inversées */
+    --voies-surface:      #16213E; /* ↔ voies-surface-dark en clair */
+    --voies-surface-dark: #0F3460; /* Fond plus profond en dark */
+
+    /* Ombres renforcées (fond sombre = moins de contraste naturel) */
+    --shadow-card:  0 2px 12px rgba(0, 0, 0, 0.35), 0 1px 3px rgba(0, 0, 0, 0.25);
+    --shadow-popup: 0 8px 32px rgba(0, 0, 0, 0.50), 0 2px 8px rgba(0, 0, 0, 0.30);
+    --shadow-float: 0 4px 24px rgba(0, 0, 0, 0.40);
+
+    /* Couleurs sémantiques de surface (mode sombre) */
+    --color-bg:         #1A1A2E;
+    --color-surface:    #16213E;
+    --color-border:     rgba(255,255,255,0.08);
+    --color-text:       #F0F0EC;
+    --color-text-muted: rgba(240,240,236,0.55);
+    --color-overlay:    rgba(22,33,62,0.97);
+
+    /* Trafic : légèrement désaturé pour réduire la fatigue visuelle */
+    --traffic-low:      #66BB6A;
+    --traffic-mid:      #FFA726;
+    --traffic-high:     #EF5350;
+    --traffic-critical: #C62828;
+  }
+}
+
+/* =============================================================
+   CLASSE .dark — support du toggle explicite (Tailwind / JS)
+   Identique au media query mais activé par class sur <html>
+   ============================================================= */
+.dark {
+  --voies-surface:      #16213E;
+  --voies-surface-dark: #0F3460;
+  --shadow-card:        0 2px 12px rgba(0,0,0,0.35), 0 1px 3px rgba(0,0,0,0.25);
+  --shadow-popup:       0 8px 32px rgba(0,0,0,0.50), 0 2px 8px rgba(0,0,0,0.30);
+  --shadow-float:       0 4px 24px rgba(0,0,0,0.40);
+  --color-bg:           #1A1A2E;
+  --color-surface:      #16213E;
+  --color-border:       rgba(255,255,255,0.08);
+  --color-text:         #F0F0EC;
+  --color-text-muted:   rgba(240,240,236,0.55);
+  --color-overlay:      rgba(22,33,62,0.97);
+  --traffic-low:        #66BB6A;
+  --traffic-mid:        #FFA726;
+  --traffic-high:       #EF5350;
+  --traffic-critical:   #C62828;
+}
+
+/* =============================================================
+   UTILITAIRES — classes réutilisables dans tous les composants
+   ============================================================= */
+
+/* -----------------------------------------------------------
+   .voies-card
+   Surface conteneur standard : fond, arrondi, ombre, padding.
+   Usage : panneaux flottants, sidebar, info boxes.
+----------------------------------------------------------- */
+.voies-card {
+  background:    var(--color-surface);
+  border-radius: var(--radius-card);
+  box-shadow:    var(--shadow-card);
+  padding:       var(--space-md);
+  border:        1px solid var(--color-border);
+}
+
+/* -----------------------------------------------------------
+   .voies-pill-btn
+   Base commune pour les boutons arrondis (pill).
+   Toujours associé à --primary ou --secondary.
+----------------------------------------------------------- */
+.voies-pill-btn {
+  display:         inline-flex;
+  align-items:     center;
+  justify-content: center;
+  gap:             var(--space-xs);
+  height:          40px;
+  padding:         0 var(--space-lg);
+  border-radius:   var(--radius-pill);
+  font:            var(--voies-body);
+  font-weight:     600;
+  cursor:          pointer;
+  border:          none;
+  outline:         none;
+  transition:      transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  white-space:     nowrap;
+}
+
+.voies-pill-btn:hover  { transform: scale(1.03); }
+.voies-pill-btn:active { transform: scale(0.97); }
+
+/* Variante primaire : fond teal, texte blanc */
+.voies-pill-btn--primary {
+  background:  var(--voies-primary);
+  color:       #ffffff;
+  box-shadow:  0 2px 8px rgba(0, 191, 165, 0.35);
+}
+.voies-pill-btn--primary:hover {
+  background:  var(--voies-primary-dark);
+  box-shadow:  0 4px 14px rgba(0, 191, 165, 0.45);
+}
+
+/* Variante secondaire : contour, fond transparent */
+.voies-pill-btn--secondary {
+  background:  transparent;
+  color:       var(--voies-primary);
+  border:      1.5px solid var(--voies-primary);
+}
+.voies-pill-btn--secondary:hover {
+  background: rgba(0, 191, 165, 0.08);
+}
+
+/* -----------------------------------------------------------
+   .voies-icon-btn
+   Bouton circulaire 48px pour actions iconiques.
+   Usage : fermer, zoomer, toggle couches.
+----------------------------------------------------------- */
+.voies-icon-btn {
+  display:         inline-flex;
+  align-items:     center;
+  justify-content: center;
+  width:           48px;
+  height:          48px;
+  border-radius:   50%;
+  background:      var(--color-surface);
+  border:          1px solid var(--color-border);
+  box-shadow:      var(--shadow-card);
+  cursor:          pointer;
+  transition:      transform 0.15s ease, box-shadow 0.15s ease;
+  color:           var(--color-text);
+}
+.voies-icon-btn:hover {
+  transform:  scale(1.05);
+  box-shadow: var(--shadow-float);
+}
+.voies-icon-btn:active { transform: scale(0.95); }
+
+/* -----------------------------------------------------------
+   .voies-traffic-badge
+   Pill compacte affichant le niveau de trafic avec un point coloré.
+   Usage : tooltip, sidebar, liste de routes.
+   Modifier la couleur via style="--badge-color: var(--traffic-*)"
+----------------------------------------------------------- */
+.voies-traffic-badge {
+  display:       inline-flex;
+  align-items:   center;
+  gap:           var(--space-xs);
+  padding:       2px var(--space-sm);
+  border-radius: var(--radius-pill);
+  font:          var(--voies-caption);
+  font-weight:   600;
+  background:    color-mix(in srgb, var(--badge-color, var(--traffic-low)) 15%, transparent);
+  color:         var(--badge-color, var(--traffic-low));
+  border:        1px solid color-mix(in srgb, var(--badge-color, var(--traffic-low)) 30%, transparent);
+}
+
+.voies-traffic-badge::before {
+  content:       "";
+  display:       inline-block;
+  width:         6px;
+  height:        6px;
+  border-radius: 50%;
+  background:    var(--badge-color, var(--traffic-low));
+  animation:     pulse-dot 2s ease-in-out infinite;
+}
+
+/* -----------------------------------------------------------
+   .voies-popup
+   Carte d'information flottante au survol / clic carte.
+   Animation slide-up à l'apparition.
+----------------------------------------------------------- */
+.voies-popup {
+  background:    var(--color-overlay);
+  border-radius: var(--radius-card);
+  box-shadow:    var(--shadow-popup);
+  border:        1px solid var(--color-border);
+  max-width:     280px;
+  padding:       var(--space-md);
+  font:          var(--voies-body);
+  color:         var(--color-text);
+  animation:     slide-up 0.2s ease forwards;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.voies-popup__title {
+  font:          var(--voies-subhead);
+  color:         var(--color-text);
+  margin-bottom: var(--space-xs);
+}
+
+.voies-popup__row {
+  display:        flex;
+  justify-content: space-between;
+  gap:            var(--space-sm);
+  color:          var(--color-text-muted);
+}
+
+/* =============================================================
+   RESET minimal — neutralise les marges navigateur sur html/body
+   (complète le reset Tailwind sans le dupliquer)
+   ============================================================= */
+*, *::before, *::after { box-sizing: border-box; }

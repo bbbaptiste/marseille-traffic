@@ -25,6 +25,8 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: postgresql://voies:voies@postgres:5432/voies
+    volumes:
+      - ./backend:/app
 
   frontend:
     build: ./frontend

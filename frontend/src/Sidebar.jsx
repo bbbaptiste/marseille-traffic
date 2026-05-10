@@ -28,7 +28,13 @@ export default function Sidebar({ road, hour, onClose }) {
           <p className="text-sm font-bold text-gray-100 truncate">
             {road.name || 'Route sans nom'}
           </p>
-          <span className="inline-block mt-1 text-[11px] font-semibold text-red-400 bg-red-900/40 rounded px-2 py-0.5">
+          <span
+            className="inline-block mt-1 text-[11px] font-semibold rounded px-2 py-0.5"
+            style={{
+              color: 'var(--voies-primary)',
+              background: 'color-mix(in srgb, var(--voies-primary) 12%, transparent)',
+            }}
+          >
             {typeLabel}
           </span>
         </div>
@@ -43,7 +49,13 @@ export default function Sidebar({ road, hour, onClose }) {
 
       {/* Peak indicator */}
       {peak && (
-        <div className="mx-4 mt-3 px-3 py-2 bg-red-900/30 rounded-lg text-xs text-red-300">
+        <div
+          className="mx-4 mt-3 px-3 py-2 rounded-lg text-xs"
+          style={{
+            background: 'color-mix(in srgb, var(--voies-primary) 10%, transparent)',
+            color: 'var(--voies-primary)',
+          }}
+        >
           Pointe semaine&nbsp;:{' '}
           <strong>{String(peak.hour).padStart(2, '0')}:00 ({peak.value}&nbsp;%)</strong>
         </div>

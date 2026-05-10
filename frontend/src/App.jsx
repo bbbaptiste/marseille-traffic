@@ -1,28 +1,19 @@
 import { useEffect, useRef, useState } from 'react'
 import maplibregl from 'maplibre-gl'
+import MapboxDraw from '@mapbox/mapbox-gl-draw'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import TrafficPanel from './TrafficPanel.jsx'
 import Sidebar from './Sidebar.jsx'
 import Legend from './Legend.jsx'
 import StatsBar from './StatsBar.jsx'
+import SimulationBanner from './SimulationBanner.jsx'
+import SimulationToolbar from './SimulationToolbar.jsx'
+import ComparisonView from './ComparisonView.jsx'
+import { TRAFFIC_PAINT } from './config/mapConfig.js'
+import { DELETED_ROAD_PAINT, DRAW_STYLES } from './config/simulationConfig.js'
+import { useDeleteSimulation } from './hooks/useDeleteSimulation.js'
 
 const API_BASE = 'http://localhost:8000'
-
-const TRAFFIC_COLOR = [
-  'step', ['get', 'traffic_level'],
-  '#2ECC71',
-  0.3, '#F39C12',
-  0.6, '#E74C3C',
-  0.8, '#900C3F',
-]
-
-const TRAFFIC_WIDTH = [
-  'step', ['get', 'traffic_level'],
-  2,
-  0.3, 3,
-  0.6, 4,
-  0.8, 5,
-]
 
 async function fetchTraffic(hour, dayType) {
   const res = await fetch(`${API_BASE}/api/traffic?hour=${hour}&day_type=${dayType}`)
@@ -33,17 +24,31 @@ export default function App() {
   const mapContainer = useRef(null)
   const map = useRef(null)
   const popup = useRef(null)
+  const drawRef = useRef(null)
   const hourRef = useRef(8)
+  const simulationModeRef = useRef(false)
+  const drawModeActiveRef = useRef(false)
+  const trafficDataRef = useRef([])
 
   const [hour, setHour] = useState(8)
   const [dayType, setDayType] = useState('semaine')
   const [mapReady, setMapReady] = useState(false)
   const [selectedRoad, setSelectedRoad] = useState(null)
   const [trafficData, setTrafficData] = useState([])
+  const [simulationMode, setSimulationMode] = useState(false)
+  const [drawModeActive, setDrawModeActive] = useState(false)
+  const [simulating, setSimulating] = useState(false)
+  const [comparisonMode, setComparisonMode] = useState(false)
+  const [simulationResult, setSimulationResult] = useState(null)
 
-  useEffect(() => {
-    hourRef.current = hour
-  }, [hour])
+  const { deletedRoadIds, deletedCount, toggleRoadDeleted, clearDeletion, selectRoadsInPolygon } =
+    useDeleteSimulation(map, mapReady)
+
+  // Sync refs for stale-closure safety inside map event listeners
+  useEffect(() => { hourRef.current = hour }, [hour])
+  useEffect(() => { simulationModeRef.current = simulationMode }, [simulationMode])
+  useEffect(() => { drawModeActiveRef.current = drawModeActive }, [drawModeActive])
+  useEffect(() => { trafficDataRef.current = trafficData }, [trafficData])
 
   useEffect(() => {
     if (map.current) return
@@ -87,57 +92,105 @@ export default function App() {
         const geojson = await fetchTraffic(hourRef.current, 'semaine')
 
         map.current.addSource('traffic', { type: 'geojson', data: geojson })
+
+        // Normal traffic layer
         map.current.addLayer({
           id: 'traffic-layer',
           type: 'line',
           source: 'traffic',
-          paint: {
-            'line-color': TRAFFIC_COLOR,
-            'line-width': TRAFFIC_WIDTH,
-            'line-color-transition': { duration: 300, delay: 0 },
-            'line-width-transition': { duration: 300, delay: 0 },
-          },
+          paint: TRAFFIC_PAINT,
         })
+
+        // Deleted roads layer — initially matches nothing
+        map.current.addLayer({
+          id: 'traffic-layer-deleted',
+          type: 'line',
+          source: 'traffic',
+          paint: DELETED_ROAD_PAINT,
+          filter: ['==', ['get', 'id'], -1],
+        })
+
+        // Draw control (renders above all map layers)
+        const draw = new MapboxDraw({
+          displayControlsDefault: false,
+          styles: DRAW_STYLES,
+        })
+        map.current.addControl(draw)
+        drawRef.current = draw
 
         setTrafficData(geojson.features ?? [])
 
         // Hover popup
-        map.current.on('mouseenter', 'traffic-layer', (e) => {
+        const showPopup = (e, isDeleted) => {
           map.current.getCanvas().style.cursor = 'pointer'
           const props = e.features[0].properties
           const name = props.name || 'Route sans nom'
           const type = props.highway_type || '—'
           const level = Math.round(props.traffic_level * 100)
           const h = String(hourRef.current).padStart(2, '0')
+          const deletedBadge = isDeleted
+            ? `<br/><span style="color:var(--road-removed);font-size:11px;font-weight:600">● Supprimée (simulation)</span>`
+            : ''
           popup.current
             .setLngLat(e.lngLat)
             .setHTML(
               `<div role="tooltip" aria-live="polite"
-                style="font-family:sans-serif;font-size:13px;line-height:1.7;color:#f3f4f6;background:#111827;padding:10px 14px;border-radius:8px">
-                <strong style="font-size:14px;color:#fff">${name}</strong><br/>
+                style="font-family:sans-serif;font-size:13px;line-height:1.7;
+                       color:var(--color-text);background:var(--color-overlay);
+                       padding:10px 14px;border-radius:8px">
+                <strong style="font-size:14px;color:var(--color-text)">${name}</strong><br/>
                 Type&nbsp;: ${type}<br/>
-                Trafic&nbsp;: <strong style="color:#fca5a5">${level}&nbsp;%</strong><br/>
-                Heure&nbsp;: ${h}:00
+                Trafic&nbsp;: <strong style="color:var(--traffic-high)">${level}&nbsp;%</strong><br/>
+                Heure&nbsp;: ${h}:00${deletedBadge}
               </div>`
             )
             .addTo(map.current)
-        })
+        }
+
+        map.current.on('mouseenter', 'traffic-layer', (e) => showPopup(e, false))
+        map.current.on('mouseenter', 'traffic-layer-deleted', (e) => showPopup(e, true))
 
         map.current.on('mouseleave', 'traffic-layer', () => {
           map.current.getCanvas().style.cursor = ''
           popup.current.remove()
         })
+        map.current.on('mouseleave', 'traffic-layer-deleted', () => {
+          map.current.getCanvas().style.cursor = ''
+          popup.current.remove()
+        })
 
-        // Click: open sidebar on route, close elsewhere
+        // Click handler — mode-aware
         map.current.on('click', (e) => {
-          const features = map.current.queryRenderedFeatures(e.point, { layers: ['traffic-layer'] })
-          if (features.length > 0) {
-            const p = features[0].properties
-            setSelectedRoad({ id: p.id, name: p.name, highway_type: p.highway_type })
-            popup.current.remove()
-          } else {
-            setSelectedRoad(null)
+          if (drawModeActiveRef.current) return
+
+          const features = map.current.queryRenderedFeatures(e.point, {
+            layers: ['traffic-layer', 'traffic-layer-deleted'],
+          })
+
+          if (!features.length) {
+            if (!simulationModeRef.current) setSelectedRoad(null)
+            return
           }
+
+          const p = features[0].properties
+          popup.current.remove()
+
+          if (simulationModeRef.current) {
+            toggleRoadDeleted(p.id)
+          } else {
+            setSelectedRoad({ id: p.id, name: p.name, highway_type: p.highway_type })
+          }
+        })
+
+        // Draw events
+        map.current.on('draw.create', (e) => {
+          selectRoadsInPolygon(e.features[0], trafficDataRef.current)
+          draw.changeMode('simple_select', { featureIds: [e.features[0].id] })
+          setDrawModeActive(false)
+        })
+
+        map.current.on('draw.modechange', (e) => {
+          if (e.mode === 'simple_select') setDrawModeActive(false)
         })
 
         setMapReady(true)
@@ -152,6 +205,7 @@ export default function App() {
     }
   }, [])
 
+  // Refresh traffic data on hour/dayType change
   useEffect(() => {
     if (!mapReady) return
     const t = setTimeout(async () => {
@@ -166,17 +220,101 @@ export default function App() {
     return () => clearTimeout(t)
   }, [hour, dayType, mapReady])
 
+  function handleToggleSimulation() {
+    if (simulationMode) {
+      setSimulationMode(false)
+      clearDeletion()
+      drawRef.current?.deleteAll()
+      setDrawModeActive(false)
+    } else {
+      setSimulationMode(true)
+      setSelectedRoad(null)
+    }
+  }
+
+  function handleActivateDraw() {
+    if (drawModeActive) {
+      drawRef.current?.changeMode('simple_select')
+      setDrawModeActive(false)
+    } else {
+      drawRef.current?.changeMode('draw_polygon')
+      setDrawModeActive(true)
+    }
+  }
+
+  function handleClear() {
+    clearDeletion()
+    drawRef.current?.deleteAll()
+  }
+
+  async function handleViewImpact() {
+    if (deletedCount === 0 || simulating) return
+    setSimulating(true)
+    try {
+      const res = await fetch(`${API_BASE}/api/simulate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          removed_road_ids: [...deletedRoadIds],
+          hour,
+          day_type: dayType,
+        }),
+      })
+      const data = await res.json()
+      setSimulationResult(data)
+      setComparisonMode(true)
+    } catch (err) {
+      console.warn('Simulation failed:', err.message)
+    } finally {
+      setSimulating(false)
+    }
+  }
+
+  function handleExitComparison() {
+    setComparisonMode(false)
+    setSimulationResult(null)
+  }
+
+  if (comparisonMode && simulationResult) {
+    return (
+      <ComparisonView
+        beforeFeatures={trafficData}
+        afterGeoJSON={simulationResult}
+        hour={hour}
+        initialCenter={map.current ? [map.current.getCenter().lng, map.current.getCenter().lat] : [5.3698, 43.2965]}
+        initialZoom={map.current?.getZoom() ?? 12}
+        onExit={handleExitComparison}
+      />
+    )
+  }
+
   return (
     <div className="relative w-full h-full">
       <div ref={mapContainer} className="w-full h-full" />
+
+      <SimulationBanner visible={simulationMode} deletedCount={deletedCount} />
+
       <StatsBar features={trafficData} hour={hour} dayType={dayType} />
-      <Legend hour={hour} />
+      <Legend hour={hour} simulationMode={simulationMode} />
+
       <TrafficPanel
         hour={hour}
         dayType={dayType}
         onHourChange={setHour}
         onDayTypeChange={setDayType}
       />
+
+      <SimulationToolbar
+        simulationMode={simulationMode}
+        deletedCount={deletedCount}
+        drawModeActive={drawModeActive}
+        simulating={simulating}
+        onToggleSimulation={handleToggleSimulation}
+        onActivateDraw={handleActivateDraw}
+        onClear={handleClear}
+        onViewImpact={handleViewImpact}
+      />
+
       <Sidebar
         road={selectedRoad}
         hour={hour}

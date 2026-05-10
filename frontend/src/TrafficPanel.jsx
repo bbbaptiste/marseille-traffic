@@ -13,27 +13,31 @@ export default function TrafficPanel({ hour, dayType, onHourChange, onDayTypeCha
         max={23}
         value={hour}
         onChange={(e) => onHourChange(Number(e.target.value))}
-        className="w-40 accent-red-500 cursor-pointer"
+        className="w-40 cursor-pointer accent-[var(--voies-primary)]"
         aria-label={`Heure de simulation, valeur actuelle : ${formatted}`}
       />
-      <div className="flex rounded-lg overflow-hidden border border-red-500">
+      <div
+        className="flex rounded-lg overflow-hidden border border-[var(--voies-primary)]"
+      >
         <button
           onClick={() => onDayTypeChange('semaine')}
-          className={`px-3.5 py-1.5 text-xs font-semibold transition-colors duration-150 ${
+          className="px-3.5 py-1.5 text-xs font-semibold transition-colors duration-150"
+          style={
             dayType === 'semaine'
-              ? 'bg-red-500 text-white'
-              : 'bg-transparent text-red-400 hover:bg-red-500/10'
-          }`}
+              ? { background: 'var(--voies-primary)', color: '#fff' }
+              : { background: 'transparent', color: 'var(--voies-primary)' }
+          }
         >
           Semaine
         </button>
         <button
           onClick={() => onDayTypeChange('weekend')}
-          className={`px-3.5 py-1.5 text-xs font-semibold transition-colors duration-150 ${
+          className="px-3.5 py-1.5 text-xs font-semibold transition-colors duration-150"
+          style={
             dayType === 'weekend'
-              ? 'bg-red-500 text-white'
-              : 'bg-transparent text-red-400 hover:bg-red-500/10'
-          }`}
+              ? { background: 'var(--voies-primary)', color: '#fff' }
+              : { background: 'transparent', color: 'var(--voies-primary)' }
+          }
         >
           Week-end
         </button>
