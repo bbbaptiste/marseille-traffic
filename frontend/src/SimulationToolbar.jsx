@@ -1,3 +1,5 @@
+import { useNavigate } from 'react-router-dom'
+
 export default function SimulationToolbar({
   simulationMode,
   deletedCount,
@@ -7,9 +9,23 @@ export default function SimulationToolbar({
   onActivateDraw,
   onClear,
   onViewImpact,
+  onSave,
 }) {
+  const navigate = useNavigate()
   return (
     <div className="absolute top-4 right-14 z-10 flex flex-col items-end gap-2">
+      <button
+        onClick={() => navigate('/simulations')}
+        className="px-4 py-2 rounded-full text-xs font-semibold shadow transition-all duration-150 select-none"
+        style={{
+          background: 'var(--color-overlay)',
+          color: 'var(--color-text-muted)',
+          border: '1px solid var(--color-border)',
+        }}
+      >
+        Mes simulations
+      </button>
+
       <button
         onClick={onToggleSimulation}
         aria-pressed={simulationMode}
@@ -73,6 +89,18 @@ export default function SimulationToolbar({
                 }}
               >
                 {simulating ? 'Calcul en cours…' : '📊 Voir l\'impact'}
+              </button>
+
+              <button
+                onClick={onSave}
+                className="px-3 py-1.5 rounded-full text-xs font-semibold transition-colors duration-150"
+                style={{
+                  background: 'color-mix(in srgb, var(--voies-primary) 10%, transparent)',
+                  color: 'var(--voies-primary)',
+                  border: '1.5px solid color-mix(in srgb, var(--voies-primary) 40%, transparent)',
+                }}
+              >
+                💾 Sauvegarder
               </button>
 
               <button

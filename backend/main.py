@@ -1,10 +1,13 @@
 import json
 import logging
 import os
+import random
+import string
+from typing import Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import OperationalError, ProgrammingError
 
@@ -43,6 +46,41 @@ class SimulateRequest(BaseModel):
     removed_road_ids: list[int]
     hour: int
     day_type: str
+
+
+class SaveSimulationRequest(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100)
+    description: Optional[str] = Field(None, max_length=500)
+    removed_road_ids: list[int] = Field(..., min_length=1)
+    hour: int
+    day_type: str
+    viewport: dict = Field(default_factory=dict)
+
+    @field_validator("removed_road_ids")
+    @classmethod
+    def max_roads(cls, v):
+        if len(v) > 500:
+            raise ValueError("max 500 routes supprimées par simulation")
+        return v
+
+    @field_validator("hour")
+    @classmethod
+    def valid_hour(cls, v):
+        if not 0 <= v <= 23:
+            raise ValueError("hour must be 0–23")
+        return v
+
+    @field_validator("day_type")
+    @classmethod
+    def valid_day_type(cls, v):
+        if v not in ("semaine", "weekend"):
+            raise ValueError("day_type must be semaine or weekend")
+        return v
+
+
+def _generate_share_token(length: int = 8) -> str:
+    alphabet = string.ascii_letters + string.digits
+    return "".join(random.choices(alphabet, k=length))
 
 
 @app.get("/health")
@@ -198,3 +236,98 @@ def simulate(body: SimulateRequest):
     )
 
     return {"type": "FeatureCollection", "features": features, "meta": meta}
+
+
+# ---------------------------------------------------------------------------
+# Simulations — persistance et partage
+# ---------------------------------------------------------------------------
+
+def _row_to_simulation(row) -> dict:
+    return {
+        "id": str(row.id),
+        "name": row.name,
+        "description": row.description,
+        "removed_road_ids": row.removed_road_ids,
+        "hour": row.hour,
+        "day_type": row.day_type,
+        "viewport": row.viewport,
+        "created_at": row.created_at.isoformat(),
+        "share_token": row.share_token,
+    }
+
+
+@app.post("/api/simulations", status_code=201)
+def create_simulation(body: SaveSimulationRequest):
+    # Retry on the very unlikely share_token collision (max 3 attempts)
+    for attempt in range(3):
+        token = _generate_share_token()
+        try:
+            with engine.begin() as conn:
+                row = conn.execute(
+                    text("""
+                        INSERT INTO simulations
+                            (name, description, removed_road_ids, hour, day_type, viewport, share_token)
+                        VALUES
+                            (:name, :description, :removed_road_ids, :hour, :day_type, CAST(:viewport AS jsonb), :share_token)
+                        RETURNING id, name, description, removed_road_ids, hour, day_type,
+                                  viewport, created_at, share_token
+                    """),
+                    {
+                        "name": body.name,
+                        "description": body.description,
+                        "removed_road_ids": body.removed_road_ids,
+                        "hour": body.hour,
+                        "day_type": body.day_type,
+                        "viewport": json.dumps(body.viewport),
+                        "share_token": token,
+                    },
+                ).fetchone()
+            logger.info("Simulation saved: %s (token=%s)", body.name, token)
+            return _row_to_simulation(row)
+        except Exception as exc:
+            if "unique" in str(exc).lower() and attempt < 2:
+                continue  # token collision, retry
+            logger.exception("Failed to save simulation: %s", exc)
+            raise HTTPException(status_code=500, detail="Failed to save simulation")
+
+
+@app.get("/api/simulations/{share_token}")
+def get_simulation(share_token: str):
+    if len(share_token) > 32:
+        raise HTTPException(status_code=400, detail="Invalid share token")
+    try:
+        with engine.connect() as conn:
+            row = conn.execute(
+                text("""
+                    SELECT id, name, description, removed_road_ids, hour, day_type,
+                           viewport, created_at, share_token
+                    FROM simulations
+                    WHERE share_token = :token
+                """),
+                {"token": share_token},
+            ).fetchone()
+    except (OperationalError, ProgrammingError):
+        raise HTTPException(status_code=503, detail="Database unavailable")
+
+    if row is None:
+        raise HTTPException(status_code=404, detail="Simulation not found")
+    return _row_to_simulation(row)
+
+
+@app.get("/api/simulations")
+def list_simulations():
+    try:
+        with engine.connect() as conn:
+            rows = conn.execute(
+                text("""
+                    SELECT id, name, description, removed_road_ids, hour, day_type,
+                           viewport, created_at, share_token
+                    FROM simulations
+                    ORDER BY created_at DESC
+                    LIMIT 20
+                """),
+            ).fetchall()
+    except (OperationalError, ProgrammingError):
+        raise HTTPException(status_code=503, detail="Database unavailable")
+
+    return [_row_to_simulation(r) for r in rows]

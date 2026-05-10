@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import maplibregl from 'maplibre-gl'
 import MapboxDraw from '@mapbox/mapbox-gl-draw'
 import 'maplibre-gl/dist/maplibre-gl.css'
@@ -9,6 +10,8 @@ import StatsBar from './StatsBar.jsx'
 import SimulationBanner from './SimulationBanner.jsx'
 import SimulationToolbar from './SimulationToolbar.jsx'
 import ComparisonView from './ComparisonView.jsx'
+import SaveSimulationModal from './SaveSimulationModal.jsx'
+import Toast from './Toast.jsx'
 import { TRAFFIC_PAINT } from './config/mapConfig.js'
 import { DELETED_ROAD_PAINT, DRAW_STYLES } from './config/simulationConfig.js'
 import { useDeleteSimulation } from './hooks/useDeleteSimulation.js'
@@ -21,6 +24,7 @@ async function fetchTraffic(hour, dayType) {
 }
 
 export default function App() {
+  const { state } = useLocation()
   const mapContainer = useRef(null)
   const map = useRef(null)
   const popup = useRef(null)
@@ -29,6 +33,7 @@ export default function App() {
   const simulationModeRef = useRef(false)
   const drawModeActiveRef = useRef(false)
   const trafficDataRef = useRef([])
+  const pendingSimRef = useRef(state?.simulation ?? null)
 
   const [hour, setHour] = useState(8)
   const [dayType, setDayType] = useState('semaine')
@@ -40,8 +45,10 @@ export default function App() {
   const [simulating, setSimulating] = useState(false)
   const [comparisonMode, setComparisonMode] = useState(false)
   const [simulationResult, setSimulationResult] = useState(null)
+  const [saveModalOpen, setSaveModalOpen] = useState(false)
+  const [toast, setToast] = useState(null)
 
-  const { deletedRoadIds, deletedCount, toggleRoadDeleted, clearDeletion, selectRoadsInPolygon } =
+  const { deletedRoadIds, deletedCount, toggleRoadDeleted, clearDeletion, selectRoadsInPolygon, loadDeletion } =
     useDeleteSimulation(map, mapReady)
 
   // Sync refs for stale-closure safety inside map event listeners
@@ -49,6 +56,18 @@ export default function App() {
   useEffect(() => { simulationModeRef.current = simulationMode }, [simulationMode])
   useEffect(() => { drawModeActiveRef.current = drawModeActive }, [drawModeActive])
   useEffect(() => { trafficDataRef.current = trafficData }, [trafficData])
+
+  // Restore simulation passed via router state (from /sim/:token or SimulationList duplicate)
+  useEffect(() => {
+    if (!mapReady || !pendingSimRef.current) return
+    const sim = pendingSimRef.current
+    pendingSimRef.current = null
+    loadDeletion(sim.removed_road_ids)
+    setSimulationMode(true)
+    if (sim.viewport?.center && sim.viewport?.zoom) {
+      map.current?.flyTo({ center: sim.viewport.center, zoom: sim.viewport.zoom })
+    }
+  }, [mapReady])
 
   useEffect(() => {
     if (map.current) return
@@ -313,7 +332,29 @@ export default function App() {
         onActivateDraw={handleActivateDraw}
         onClear={handleClear}
         onViewImpact={handleViewImpact}
+        onSave={() => setSaveModalOpen(true)}
       />
+
+      {saveModalOpen && (
+        <SaveSimulationModal
+          deletedRoadIds={deletedRoadIds}
+          hour={hour}
+          dayType={dayType}
+          viewport={map.current ? {
+            center: [map.current.getCenter().lng, map.current.getCenter().lat],
+            zoom: map.current.getZoom(),
+          } : {}}
+          onClose={() => setSaveModalOpen(false)}
+          onSaved={(sim) => {
+            setSaveModalOpen(false)
+            setToast({ shareUrl: `${window.location.origin}/sim/${sim.share_token}` })
+          }}
+        />
+      )}
+
+      {toast && (
+        <Toast shareUrl={toast.shareUrl} onClose={() => setToast(null)} />
+      )}
 
       <Sidebar
         road={selectedRoad}

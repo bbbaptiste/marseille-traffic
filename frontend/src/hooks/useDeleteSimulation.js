@@ -82,11 +82,16 @@ export function useDeleteSimulation(map, mapReady) {
     }, 0)
   }, [])
 
+  const loadDeletion = useCallback((ids) => {
+    setDeletedRoadIds(new Set(ids))
+  }, [])
+
   return {
     deletedRoadIds,
     deletedCount: deletedRoadIds.size,
     toggleRoadDeleted,
     clearDeletion,
     selectRoadsInPolygon,
+    loadDeletion,
   }
 }
